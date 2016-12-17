@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def inverse_logit(eta):
     pi = 1/(1 + np.exp(-eta))
     return pi
@@ -38,5 +39,5 @@ y = np.random.binomial(1, pi)
 ## Final dataset columns:
 #
 # left_program, degree_program(phd, ms), dept, undergrad_gpa, year_in_prog,
-# classes_taken, cohort_size, age, gender, year_entered, num_publications,
-# max_impact_factor, n_times_ta, grant_funded,
+# classes_taken, cohort_size, age, gender, international_student, year_entered,
+# num_publications, max_impact_factor, n_times_ta, grant_funded,
