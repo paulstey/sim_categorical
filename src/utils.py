@@ -1,3 +1,5 @@
+# Basic utilities for this package
+
 import numpy as np
 import pandas as pd
 
