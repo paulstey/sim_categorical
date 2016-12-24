@@ -77,12 +77,17 @@ y = np.random.binomial(1, pi)
 
 
 
-def gen_grants_table(n, seed):
-    agencies = ['NIH', 'NSF', 'internal grant', 'NIMH', 'DARPA']
-    amounts =  [x for x in range(3000, 10000, 500)] + \
-     [15000, 20000, 25000, 30000, 35000, 40000]
-    probs = 
-    df_out = pd.DataFrame()
+def sim_grants_table(n, seed):
+    agencies = ['NIH', 'NSF', 'NIMH', 'DoD']
+    amounts =  [x for x in range(3000, 10000, 500)] + [15000, 20000, \
+     25000, 30000, 35000, 40000]
+    
+    probs = [0.13, 0.12, 0.1, 0.09, 0.08, 0.07, 0.06, 0.055, 0.05, \
+     0.045, 0.04, 0.035, 0.03, 0.025, 0.02, 0.019, 0.015, 0.01, 0.005, 0.001]
 
-    df_out['amount'] = np.random.normal(10000, 2000)
+    df_out = pd.DataFrame()
+    df_out['amount'] = np.random.choice(amounts, n, p = probs)
+    df_out['agency'] = np.random.choice(agencies, n, p = [0.45, 0.35, 0.1, 0.1])
+
+    return df_out
 
