@@ -27,7 +27,8 @@ import numpy as np
 ## students_tbl:
 # student_id, dept, fulltime, taken_semester_off, providence_local, 
 # hometown, funded_position, year_in_prog, is_married, has_children,
-# 
+# degree
+
 
 ## grad_school_applications_tbl:
 # student_id, undergrad_gpa, undergrad_institution, research_experience
@@ -42,19 +43,48 @@ import numpy as np
 # student_id, course_id, final_grade, semester
 
 
+def gen_student_ids(n):
+    ids = ['SN' + str(x) for x in range(1001000, 1001000 + n)]
+    # np.random.shuffle(ids) 
+    return ids
 
 
-def sim_grants_table(n, seed):
+def sim_students_table(student_ids):
+    n = len(student_ids)
+
+    married_children_xtab = pd.DataFrame()
+    married_children_xtab['married'] = [0.20, 0.15]
+    married_children_xtab['not married'] = [0.05, 0.60]
+    married_children_xtab.index = ['has children', 'no children']
+
+    x1, x2 = xtabs2vars(married_children_xtab, n)
+    married_children_df = pd.DataFrame([x1, x2]).transpose()
+
+    return married_children_df
+
+sim_students_table(range(10))
+
+def sim_grants_table(student_ids, seed):
+    n = len(student_ids)
+
     agencies = ['NIH', 'NSF', 'NIMH', 'DoD']
     amounts =  [x for x in range(3000, 10000, 500)] + [15000, 20000, \
      25000, 30000, 35000, 40000]
     
-    probs = [0.13, 0.12, 0.1, 0.09, 0.08, 0.07, 0.06, 0.055, 0.05, \
+    # Assign probabilities for grant amounts such 
+    # that larger grants are much less probable.
+    probs = [0.13, 0.12, 0.1, 0.09, 0.08, 0.07, 0.06, 0.055, 0.05,   \
      0.045, 0.04, 0.035, 0.03, 0.025, 0.02, 0.019, 0.015, 0.01, 0.005, 0.001]
 
     df_out = pd.DataFrame()
+
+    df_out['grant_id'] = range(n)
+    df_out['student_id'] = student_ids
     df_out['amount'] = np.random.choice(amounts, n, p = probs)
     df_out['agency'] = np.random.choice(agencies, n, p = [0.45, 0.35, 0.1, 0.1])
-
     return df_out
+
+
+sim_grants_table(100, 100, 1111)
+
 
