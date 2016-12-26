@@ -7,15 +7,15 @@ from xtabs2vars import *
 
 
 PHD_PROGS = ['Anthropology', 'Applied Mathematics', 'Behavioral and Social Health Sciences',\
-  'Biology', 'Biotechnology', 'Biomedical Engineering', 'Biostatistics', 'Chemistry', 'Classics'\
+  'Biology', 'Biotechnology', 'Biomedical Engineering', 'Biostatistics', 'Chemistry', 'Classics', \
   'Cognitive Science', 'Comparative Literature', 'Computational Biology', 'Computer Science', \
-  'Economics', 'Engineering', 'English', 'Epidemiology', 'History', 'Linguistics', 'Mathematics'\
+  'Economics', 'Engineering', 'English', 'Epidemiology', 'History', 'Linguistics', 'Mathematics', \
   'Philosophy', 'Physics', 'Political Science', 'Psychology', 'Sociology']
 
 MASTERS_PROGS = ['Applied Mathematics', 'Biotechnology', 'Biomedical Engineering', 'Biostatistics', \
   'Behavioral and Social Health Sciences', 'Computer Science', 'Cybersecurity', 'Education', \
   'Engineering', 'English', 'Epidemiology', 'History', 'Literary Arts', 'Physics', \
-  'Political Science', 'Public Affairs', 'Public Health', 'Theatre Arts and Performance Studies']
+  'Political Science', 'Public Health', 'Theatre Arts and Performance Studies']
 
 MS_PROGS = ['Applied Mathematics', 'Behavioral and Social Health Sciences', 'Biotechnology', \
   'Biomedical Engineering', 'Biostatistics', 'Computer Science', 'Cybersecurity', 'Engineering', \
@@ -138,7 +138,7 @@ def sim_students_table(n, ethnicity, ethn_probs, phd_progs, masters_progs, ms_pr
     students = students[col_order]
     return students
 
-sim_students_table(200, ETHNICITY, ETHNICITY_PROBS, PHD_PROGS, MASTERS_PROGS, MS_PROGS, CITIES)
+s1 = sim_students_table(200, ETHNICITY, ETHNICITY_PROBS, PHD_PROGS, MASTERS_PROGS, MS_PROGS, CITIES)
 
 
 def gen_grant_ids(n):
@@ -172,13 +172,18 @@ sim_grants_table([1, 2, 3, 4, 5, 6])
 
 
 # This gets our course data from the JSON
-with open('dept_courses.json') as data_file:    
-    course_data = json.load(data_file)
+def get_course_data(filename):
+    with open(filename) as data_file:    
+        course_data = json.load(data_file)
+    return course_data
 
+course_data = get_course_data('dept_courses.json')
 
 def gen_courses(prog, num_courses, course_data):
     courses = np.random.choice(course_data[prog], num_courses, replace = False)
     return courses 
+
+gen_courses("Applied Mathematics", 5, course_data)
 
 
 def sim_student_courses(row, course_data):
@@ -189,13 +194,21 @@ def sim_student_courses(row, course_data):
     df['student_id'] = [row.loc['student_id'] for i in range(cnt)]
     df['course_num'] = gen_courses(row.loc['program'], cnt, course_data)
     df['final_grade'] = np.random.choice(['A', 'B', 'C'], cnt, p = [0.56, 0.30, 0.14])
-
     return df
 
 
-def sim_courses_table(student_df):
+def sim_courses_table(student_df, course_data):
+    n = student_df.shape[0]
+    df = sim_student_courses(student_df.loc[0, :], course_data)
+
+    for i in range(1, n):
+        newdat = sim_student_courses(student_df.loc[i, :], course_data)
+        df = df.append(newdat, ignore_index = True, verify_integrity = True)
+
+    return df 
+
+sim_courses_table(s1, course_data)
 
 
-gen_courses("Applied Mathematics", 5, course_data)
 
 
