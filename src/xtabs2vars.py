@@ -1,5 +1,8 @@
 
 import numpy as np
+import pandas as pd 
+
+
 
 def verify_length(x1, x2, xtab_df, n):
     if len(x1) > n:
