@@ -2,7 +2,19 @@
 import pandas as pd 
 import numpy as np
 
+from xtabs2vars import *
 
+
+PHD_PROGS = ['Anthropology', 'Applied Mathematics', 'Behavioral and Social Health Sciences',\
+  'Biology', 'Biotechnology', 'Biomedical Engineering', 'Biostatistics', 'Chemistry', 'Classics'\
+  'Cognitive Science', 'Comparative Literature', 'Computational Biology', 'Computer Science', \
+  'Economics', 'Engineering', 'English', 'Epidemiology', 'History', 'Linguistics', 'Mathematics'\
+  'Philosophy', 'Physics', 'Political Science', 'Psychology', 'Sociology']
+
+MA_PROGS = ['Biotechnology', 'Biomedical Engineering', 'Biostatistics', 'Computer Science', \
+  'Cybersecurity', 'Education', 'Engineering', 'English', 'Epidemiology', 'History', \
+  'Literary Arts', 'Medical Sciences', 'Physics', 'Political Science', 'Public Affairs', \
+  'Public Health', 'Social Analysis and Research', 'Theatre Arts and Performance Studies']
 
 ## Final dataset columns:
 #
@@ -25,15 +37,13 @@ import numpy as np
 # student_id, impact_factor, with_advisor, 
 
 ## students_tbl:
-# student_id, dept, fulltime, taken_semester_off, providence_local, 
-# hometown, funded_position, year_in_prog, is_married, has_children,
-# degree
-
+# student_id, dept, fulltime, hometown, funded_position, year_in_prog, 
+# is_married, has_children, degree
 
 ## grad_school_applications_tbl:
 # student_id, undergrad_gpa, undergrad_institution, research_experience
 
-## grants_tbl:
+## GRANTS_TBL:
 # student_id, amount, funding_agency
 
 ## ta_data_tbl:
@@ -48,27 +58,61 @@ def gen_student_ids(n):
     # np.random.shuffle(ids) 
     return ids
 
+def gen_age(yr):
+    '''This function simulates a student's age from year_in_prog'''
+    age =  yr + 20 + np.random.choice([-1, 0, 1, 2, 3, 4, 5])
+    return age
 
-def sim_students_table(student_ids):
+
+def sim_students_table(student_ids, phd_progs, ma_progs):
     ''' 
-    This function needs to be fixed...
+    This function simulates the student_table. Note we make the naïve assumption 
+    that all degree programs are equally likely.
     '''
     n = len(student_ids)
 
     married_children_xtab = pd.DataFrame()
-    married_children_xtab['married'] = [0.20, 0.15]
-    married_children_xtab['not married'] = [0.05, 0.60]
+    married_children_xtab['married'] = [0.1, 0.2]
+    married_children_xtab['not married'] = [0.02, 0.68]
     married_children_xtab.index = ['has children', 'no children']
 
-    x1, x2 = xtabs2vars(married_children_xtab, n)
-    married_children_df = pd.DataFrame([x1, x2]).transpose()
+    xkids, xmarried = xtabs2vars(married_children_xtab, n)
+    students = pd.DataFrame([xkids, xmarried]).transpose()
+    
+    students['sex'] = np.random.choice(["Male", "Female"], n)
+    students['ethnicity'] = np.random.choice(['American Indian or Alskan Native', \
+                                              'Asian', \
+                                              'Black or African American', \
+                                              'Hispanic or Latino', \
+                                              'Native Hawaiian or Pacific Islander', \
+                                              'Race/Ethnicity Unknown', \
+                                              'Two or More Races', \
+                                              'White'], 
+                                              n, p = [0.02, 0.26, 0.11, 0.09, 0.02, 0.09, 0.02, 0.39])
 
-    return married_children_df
+    students['degree'] = np.random.choice(['PhD', 'MA/MS'], n, p = [0.7, 0.3])
+    students['funded_position'] = True
+    students['fulltime'] = True
+    for i in range(n):
+        if students.loc[i, 'degree'] == "PhD":
+            students.loc[i, 'department'] = np.random.choice(phd_progs)
+            students.loc[i, 'year_in_prog'] = np.random.choice([1, 2, 3, 4, 5, 6, 7])
+        else:
+            students.loc[i, 'department'] = np.random.choice(ma_progs)
+            students.loc[i, 'year_in_prog'] = np.random.choice([1, 2, 3])
+            
+            # For masters students, we probabilistically assign 
+            # funded and fulltime status (both are all TRUE for PhD)
+            students.loc[i, 'funded_position'] = np.random.choice([True, False], p = [0.3, 0.7])
+            students.loc[i, 'fulltime'] = np.random.choice([True, False], p = [0.8, 0.2])
+        students.loc[i, 'age'] = gen_age(students.loc[i, 'year_in_prog'])
 
-sim_students_table(range(10))
+    return students
+
+sim_students_table(range(20), PHD_PROGS, MA_PROGS)
 
 
-def sim_grants_table(student_ids, seed):
+def sim_grants_table(student_ids):
     n = len(student_ids)
 
     agencies = ['NIH', 'NSF', 'NIMH', 'DoD']
@@ -89,6 +133,6 @@ def sim_grants_table(student_ids, seed):
     return df_out
 
 
-sim_grants_table(100, 100, 1111)
+sim_grants_table([1, 2, 3, 4, 5, 6])
 
 
