@@ -50,6 +50,9 @@ def gen_student_ids(n):
 
 
 def sim_students_table(student_ids):
+    ''' 
+    This function needs to be fixed...
+    '''
     n = len(student_ids)
 
     married_children_xtab = pd.DataFrame()
@@ -63,6 +66,7 @@ def sim_students_table(student_ids):
     return married_children_df
 
 sim_students_table(range(10))
+
 
 def sim_grants_table(student_ids, seed):
     n = len(student_ids)
