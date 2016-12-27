@@ -21,6 +21,10 @@ MS_PROGS = ['Applied Mathematics', 'Behavioral and Social Health Sciences', 'Bio
   'Biomedical Engineering', 'Biostatistics', 'Computer Science', 'Cybersecurity', 'Engineering', \
   'Epidemiology', 'Medical Sciences', 'Physics', 'Public Health', 'Social Analysis and Research']
 
+STEM_PROGS = ['Applied Mathematics', 'Biotechnology', 'Biomedical Engineering', 'Biostatistics', \
+  'Chemistry', 'Computational Biology', 'Computer Science', 'Economics', 'Engineering', \
+  'Mathematics', 'Physics']
+
 ETHNICITY = ['American Indian or Alskan Native', 'Asian', 'Black or African American', \
     'Hispanic or Latino', 'Native Hawaiian or Pacific Islander', 'Race/Ethnicity Unknown', \
     'Two or More Races', 'White']
@@ -31,6 +35,7 @@ CITIES = pd.read_csv('top_500_cities.csv')
 CITIES['probability'] = CITIES.iloc[:, 2]/sum(CITIES.iloc[:, 2])
 CITIES['citystate'] = CITIES['city'].map(str) + ', ' + CITIES['state']
 
+UNDERGRAD_INST = pd.read_csv("colleges_and_universities_subset.csv")
 
 ## Final dataset columns:
 #
@@ -57,17 +62,21 @@ CITIES['citystate'] = CITIES['city'].map(str) + ', ' + CITIES['state']
 # age, sex, ethnicity, hometown, marital_status, has_children 
 
 ## grad_school_applications_table:
-# student_id, undergrad_gpa, undergrad_institution, research_experience
+# student_id, undergrad_gpa, gre_verbal, gre_quant, gre_writing,
+# undergrad_institution, research_experience
 
 ## GRANTS_TABLE:
 # grant_id, student_id, amount, funding_agency
 
 ## ta_data_table:
-# student_id, course_id,
+# student_id, course_id, 
 
 ## COURSES_TABLE:
 # id, student_id, course_id, final_grade
 
+def inverse_logit(eta):
+    pi = 1/(1 + np.exp(-eta))
+    return pi
 
 def gen_student_ids(n):
     ids = ['SR' + str(x) for x in range(1001000, 1001000 + n)]
@@ -208,6 +217,58 @@ def sim_courses_table(student_df, course_data):
     return df 
 
 sim_courses_table(s1, course_data)
+
+
+def gen_gre_quant(degree_prog, stem_progs):
+    if degree_prog in stem_progs:
+        eta = np.random.normal(3.5, 0.8)
+        gre = inverse_logit(eta)
+    else:
+        eta = np.random.normal(2.1, 1.3)
+        gre = inverse_logit(eta)
+    return gre 
+
+gen_gre_quant('Appled Mathematics', STEM_PROGS)
+
+def gen_gre_verbal(gre_quant):
+    eta = 3.5 * gre_quant + np.random.normal(0.0, 0.6)
+    gre = inverse_logit(eta)
+    return gre
+
+
+def gen_gre_write(gre_verbal, gre_quant):
+    eta = 1.5 * gre_verbal + 0.6 * gre_quant + np.random.normal(0.0, 1.2)
+    gre = inverse_logit(eta)
+    return gre
+
+
+def gen_gpa(gre_verb, gre_quant, gre_writing):
+    err = np.random.normal(0.0, 0.15)
+    val = 3.3 * np.log(1.25 * gre_verb + 1.35 * gre_quant + 1.05 * gre_writing + err)
+    if val > 4.0: 
+        gpa = 4.0
+    else:
+        gpa = val
+    return gpa 
+
+
+def sim_applications_table(student_df, stem_progs, universities):
+    n = student_df.shape[0]
+    df = pd.DataFrame()
+    df['student_id'] = student_df['student_id']
+    df['research_experience'] = np.random.choice([True, False], n, p = [0.4, 0.6])
+    df['undergrad_institution'] = np.random.choice(universities, n)
+
+    for i in range(n):
+        df.loc[i, 'gre_quant'] = gen_gre_quant(student_df.loc[i, 'program'], stem_progs)
+        df.loc[i, 'gre_verbal'] = gen_gre_verbal(df.loc[i, 'gre_quant'])
+        df.loc[i, 'gre_writing'] = gen_gre_write(df.loc[i, 'gre_verbal'], df.loc[i, 'gre_quant'])
+        df.loc[i, 'gpa'] = gen_gpa(df.loc[i, 'gre_verbal'], \
+                                   df.loc[i, 'gre_quant'],  \
+                                   df.loc[i, 'gre_writing'])
+    return df
+
+sim_applications_table(s1, STEM_PROGS, UNDERGRAD_INST['institution_name'])
 
 
 
