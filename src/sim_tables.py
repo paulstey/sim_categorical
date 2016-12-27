@@ -5,7 +5,6 @@ import json
 
 from xtabs2vars import *
 
-
 PHD_PROGS = ['Anthropology', 'Applied Mathematics', 'Behavioral and Social Health Sciences',\
   'Biology', 'Biotechnology', 'Biomedical Engineering', 'Biostatistics', 'Chemistry', 'Classics', \
   'Cognitive Science', 'Comparative Literature', 'Computational Biology', 'Computer Science', \

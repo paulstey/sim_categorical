@@ -33,5 +33,3 @@ pi = inv_logit(eta)
 y = np.random.binomial(1, pi)
 
 
-
-
