@@ -60,7 +60,7 @@ UNDERGRAD_INST = pd.read_csv("colleges_and_universities_subset.csv")
 # student_id, program, degree, fulltime, funded_position, year_in_program,
 # age, sex, ethnicity, hometown, marital_status, has_children 
 
-## grad_school_applications_table:
+## GRAD_SCHOOL_APPLICATIONS_TABLE:
 # student_id, undergrad_gpa, gre_verbal, gre_quant, gre_writing,
 # undergrad_institution, research_experience
 
@@ -175,7 +175,7 @@ def sim_grants_table(student_ids):
     return df_out
 
 
-sim_grants_table([1, 2, 3, 4, 5, 6])
+sim_grants_table(range(20))
 
 
 
@@ -212,7 +212,6 @@ def sim_courses_table(student_df, course_data):
     for i in range(1, n):
         newdat = sim_student_courses(student_df.loc[i, :], course_data)
         df = df.append(newdat, ignore_index = True, verify_integrity = True)
-
     return df 
 
 sim_courses_table(s1, course_data)
