@@ -103,15 +103,16 @@ def sim_demographic_data(n, ethnicity, ethn_probs):
     students['ethnicity'] = np.random.choice(ethnicity, n, p = ethn_probs)
     return students 
 
-sim_demographic_data(200, ETHNICITY, ETHNICITY_PROBS)
+student_dem = sim_demographic_data(200, ETHNICITY, ETHNICITY_PROBS)
 
 
-def sim_students_table(n, ethnicity, ethn_probs, phd_progs, masters_progs, ms_progs, cities_df):
+def sim_students_program_table(students_demo, phd_progs, masters_progs, ms_progs, cities_df):
     ''' 
     This function simulates the student_table. Note we make the naïve assumption 
     that all degree programs are equally likely.
     '''
-    students = sim_demographic_data(n, ethnicity, ethn_probs)
+    students = students_demo.copy()
+    n = students.shape[0]
     
     students['degree'] = np.random.choice(['PhD', 'MS'], n, p = [0.7, 0.3])
     students['funded_position'] = True
@@ -146,7 +147,7 @@ def sim_students_table(n, ethnicity, ethn_probs, phd_progs, masters_progs, ms_pr
     students = students[col_order]
     return students
 
-s1 = sim_students_table(200, ETHNICITY, ETHNICITY_PROBS, PHD_PROGS, MASTERS_PROGS, MS_PROGS, CITIES)
+s1 = sim_students_program_table(student_dem, PHD_PROGS, MASTERS_PROGS, MS_PROGS, CITIES)
 
 
 def gen_grant_ids(n):
