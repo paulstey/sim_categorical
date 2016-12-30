@@ -60,12 +60,10 @@ UNDERGRAD_INST = pd.read_csv("colleges_and_universities_subset.csv")
 # student_id, impact_factor, with_advisor, 
 
 ## STUDENT_DEMOGRAPHICS_TABLE:
-# student_id, program, degree, fulltime, funded_position, year_in_program,
-# age, sex, ethnicity, hometown, marital_status, has_children 
+# student_id, age, sex, ethnicity, hometown, marital_status, has_children 
 
 ## STUDENTS_PRGRM_TABLE:
-# student_id, program, degree, fulltime, funded_position, year_in_program,
-# age, sex, ethnicity, hometown, marital_status, has_children 
+# student_id, program, degree, fulltime, funded_position, year_in_program
 
 ## GRAD_SCHOOL_APPLICATIONS_TABLE:
 # student_id, undergrad_gpa, gre_verbal, gre_quant, gre_writing,
@@ -198,15 +196,17 @@ sim_grants_table(range(20))
 
 
 # This gets our course data from the JSON
-def get_course_data(filename):
+def get_json_data(filename):
     with open(filename) as data_file:    
         course_data = json.load(data_file)
     return course_data
 
-course_data = get_course_data('dept_courses.json')
+course_data = get_json_data('dept_courses.json')
 
-def gen_courses(prog, n_courses, course_data):
-    courses = np.random.choice(course_data[prog], n_courses, replace = False)
+def gen_courses(prgm, n_courses, course_data):
+    if n_courses > len(course_data[prgm]):
+        n_courses = len(course_data[prgm])    
+    courses = np.random.choice(course_data[prgm], n_courses, replace = False)
     return courses 
 
 gen_courses("Applied Mathematics", 5, course_data)
@@ -214,9 +214,8 @@ gen_courses("Applied Mathematics", 5, course_data)
 
 def sim_student_courses(row, course_data):
     '''
-    This function generates a single student's course history using student's 
-    number of years in the program to determine the number of courses taken by 
-    the student. Grades are assigned at random.
+    This function generates a single student's course history using `year_in_prgm` to 
+    determine the number of courses taken by the student. Grades are assigned at random.
     '''
     yrs = row.loc['year_in_prgm']
     n_courses = int(4 * np.log(5*yrs) + np.random.choice([-1, 0, 1, 2]))
@@ -229,6 +228,9 @@ def sim_student_courses(row, course_data):
 
 
 def sim_courses_table(student_df, course_data):
+    '''
+    This function simulates the course history for all students in `student_df`
+    ''' 
     n = student_df.shape[0]
     df = sim_student_courses(student_df.loc[0, :], course_data)
 
@@ -298,6 +300,15 @@ def sim_applications_table(student_df, stem_prgms, universities):
 student_apps = sim_applications_table(student_prgm, STEM_PRGMS, UNDERGRAD_INST['institution_name'])
 student_apps.head()
 student_apps.describe()
+
+
+
+journal_data = get_json_data("journals_info.json")
+
+def get_journal_data(prgm, journal_dict):
+    journals = journal_dict[prgm]
+    journal, impact_factor =  np.random.choice(journals).split(", ")
+    return (journal, impact_factor)
 
 
 
