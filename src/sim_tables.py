@@ -86,7 +86,7 @@ def inverse_logit(eta):
 
 def gen_student_ids(n):
     ids = ['SR' + str(x) for x in range(1001000, 1001000 + n)]
-    # np.random.shuffle(ids) 
+    np.random.shuffle(ids) 
     return ids
 
 def gen_age(yr):
@@ -125,14 +125,13 @@ def sim_students_prgrm_table(n, phd_prgms, masters_prgms, ms_prgms):
                 students.loc[i, 'funded_position'] = False 
             else: 
                 students.loc[i, 'funded_position'] = np.random.choice([True, False], p = [0.3, 0.7])
-
     
     col_order = ['student_id', 'program', 'degree', 'fulltime', 'funded_position', 'year_in_prgm']
     
     students = students[col_order]
     return students
 
-student_prgm = sim_students_prgrm_table(200, PHD_PRGMS, MASTERS_PRGMS, MS_PRGMS)
+student_prgm = sim_students_prgrm_table(1000, PHD_PRGMS, MASTERS_PRGMS, MS_PRGMS)
 
 
 def sim_student_demographics_table(student_prgm_df, ethn, ethn_pr, cities_df, stem_prgms):
@@ -151,15 +150,9 @@ def sim_student_demographics_table(student_prgm_df, ethn, ethn_pr, cities_df, st
     married_children_xtab['Single'] = [0.02, 0.70]
     married_children_xtab.index = ['has children', 'no children']
 
-
-    ###
-    # NOTE: THIS PART NEEDS TO BE FIXED...
     xkids, xmarried = xtabs2vars(married_children_xtab, n)
     students['has_children'] = xkids
-    students['marital_status'] = xmarried #pd.DataFrame([xkids, xmarried]).transpose()
-    # students.columns = ['has_children', 'marital_status']
-    #
-    ###
+    students['marital_status'] = xmarried 
 
     students['has_children'] = students['has_children'] == 'has children'
     students['sex'] = np.random.choice(['Male', 'Female'], n)
@@ -212,21 +205,26 @@ def get_course_data(filename):
 
 course_data = get_course_data('dept_courses.json')
 
-def gen_courses(prog, num_courses, course_data):
-    courses = np.random.choice(course_data[prog], num_courses, replace = False)
+def gen_courses(prog, n_courses, course_data):
+    courses = np.random.choice(course_data[prog], n_courses, replace = False)
     return courses 
 
 gen_courses("Applied Mathematics", 5, course_data)
 
 
 def sim_student_courses(row, course_data):
-    yrs = row.loc['year_in_program']
-    cnt = int(4 * np.log(5*yrs) + np.random.choice([-1, 0, 1, 2]))
+    '''
+    This function generates a single student's course history using student's 
+    number of years in the program to determine the number of courses taken by 
+    the student. Grades are assigned at random.
+    '''
+    yrs = row.loc['year_in_prgm']
+    n_courses = int(4 * np.log(5*yrs) + np.random.choice([-1, 0, 1, 2]))
     df = pd.DataFrame()
 
-    df['student_id'] = [row.loc['student_id'] for i in range(cnt)]
-    df['course_num'] = gen_courses(row.loc['program'], cnt, course_data)
-    df['final_grade'] = np.random.choice(['A', 'B', 'C'], cnt, p = [0.56, 0.30, 0.14])
+    df['student_id'] = [row.loc['student_id'] for i in range(n_courses)]
+    df['course_num'] = gen_courses(row.loc['program'], n_courses, course_data)
+    df['final_grade'] = np.random.choice(['A', 'B', 'C'], n_courses, p = [0.56, 0.30, 0.14])
     return df
 
 
@@ -239,28 +237,34 @@ def sim_courses_table(student_df, course_data):
         df = df.append(newdat, ignore_index = True, verify_integrity = True)
     return df 
 
-sim_courses_table(s1, course_data)
+student_courses = sim_courses_table(student_prgm, course_data)
 
 
-def gen_gre_quant(degree_prog, stem_prgms):
-    if degree_prog in stem_prgms:
-        eta = np.random.normal(3.5, 0.8)
+def gen_gre_quant(degree_prgm, stem_prgms):
+    ''' 
+    This function simulates quant GRE scores, different means SDs 
+    are used for STEM and non-STEM students.
+    '''
+    if degree_prgm in stem_prgms:
+        # mean of 2.8 and SD 0.3 give a resulting mean percentile = 94%
+        eta = np.random.normal(2.8, 0.3)
         gre = inverse_logit(eta)
     else:
-        eta = np.random.normal(2.1, 1.3)
+        # mean of 1.7 and SD 0.7 give a resulting mean percentile = 82%
+        eta = np.random.normal(1.7, 0.6)
         gre = inverse_logit(eta)
     return gre 
 
-gen_gre_quant('Appled Mathematics', STEM_PRgms)
+# gre1 = gen_gre_quant('Appled Mathematics', STEM_PRGMS)
 
 def gen_gre_verbal(gre_quant):
-    eta = 3.5 * gre_quant + np.random.normal(0.0, 0.6)
+    eta = 1.7 * gre_quant + np.random.normal(0.0, 0.4)
     gre = inverse_logit(eta)
     return gre
 
 
 def gen_gre_write(gre_verbal, gre_quant):
-    eta = 1.5 * gre_verbal + 0.6 * gre_quant + np.random.normal(0.0, 1.2)
+    eta = 1.5 * gre_verbal + 0.6 * gre_quant + np.random.normal(0.0, 0.7)
     gre = inverse_logit(eta)
     return gre
 
@@ -291,8 +295,9 @@ def sim_applications_table(student_df, stem_prgms, universities):
                                    df.loc[i, 'gre_writing'])
     return df
 
-sim_applications_table(s1, STEM_PRGMS, UNDERGRAD_INST['institution_name'])
-
+student_apps = sim_applications_table(student_prgm, STEM_PRGMS, UNDERGRAD_INST['institution_name'])
+student_apps.head()
+student_apps.describe()
 
 
 
