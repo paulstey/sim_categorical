@@ -307,8 +307,19 @@ journal_data = get_json_data("journals_info.json")
 
 def get_journal_data(prgm, journal_dict):
     journals = journal_dict[prgm]
-    journal, impact_factor =  np.random.choice(journals).split(", ")
+    journal, *impact_factor =  np.random.choice(journals).split(", ")
+    if len(impact_factor) == 0:
+        print(prgm, journal, impact_factor)
     return (journal, impact_factor)
+
+def test_get_journal_data(n, phd_prgms, masters_prgms, journal_dict):
+    prgms = phd_prgms + masters_prgms 
+    for i in range(n):
+        prgm = np.random.choice(prgms)
+        journal, impfactr = get_journal_data(prgm, journal_dict)
+
+test_get_journal_data(100000, PHD_PRGMS, MASTERS_PRGMS, journal_data)
+
 
 
 
