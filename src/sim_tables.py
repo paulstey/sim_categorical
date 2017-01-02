@@ -9,11 +9,11 @@ from xtabs2vars import *
 
 # Here we load city data for generating students' hometowns. We assign the 
 # probability of selecting a city in proportion to the size of the city. 
-cities = pd.read_csv('top_500_cities.csv')
+cities = pd.read_csv('../input_data/top_500_cities.csv')
 cities['probability'] = cities.iloc[:, 2]/sum(cities.iloc[:, 2])
 cities['citystate'] = cities['city'].map(str) + ', ' + cities['state']
 
-undergrad_inst = pd.read_csv("colleges_and_universities_subset.csv")
+undergrad_inst = pd.read_csv("../input_data/colleges_and_universities_subset.csv")
 
 ## Final dataset columns:
 #
@@ -206,7 +206,7 @@ def get_json_data(filename):
         course_data = json.load(data_file)
     return course_data
 
-# course_data = get_json_data('dept_courses.json')
+# course_data = get_json_data('../input_data/dept_courses.json')
 
 def gen_courses(prgm, n_courses, course_data):
     if n_courses > len(course_data[prgm]):
@@ -337,7 +337,7 @@ def sim_applications_table(student_df, universities):
 # student_apps
 
 
-# journal_data = get_json_data("journals_info.json")
+# journal_data = get_json_data('../input_data/journals_info.json')
 
 def get_journal_data(prgm, journal_dict):
     journals = journal_dict[prgm]
@@ -387,8 +387,8 @@ if __name__ == '__main__':
     np.random.seed(11111)
     n_students = 1000
 
-    course_data = get_json_data('dept_courses.json')
-    journal_data = get_json_data("journals_info.json")
+    course_data = get_json_data('../input_data/dept_courses.json')
+    journal_data = get_json_data('../input_data/journals_info.json')
 
     student_prgm = sim_students_prgrm_table(n_students)
     student_dem = sim_student_demographics_table(student_prgm, cities)
