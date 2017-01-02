@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 import pandas as pd 
 import numpy as np
@@ -8,11 +9,11 @@ from xtabs2vars import *
 
 # Here we load city data for generating students' hometowns. We assign the 
 # probability of selecting a city in proportion to the size of the city. 
-CITIES = pd.read_csv('top_500_cities.csv')
-CITIES['probability'] = CITIES.iloc[:, 2]/sum(CITIES.iloc[:, 2])
-CITIES['citystate'] = CITIES['city'].map(str) + ', ' + CITIES['state']
+cities = pd.read_csv('top_500_cities.csv')
+cities['probability'] = cities.iloc[:, 2]/sum(cities.iloc[:, 2])
+cities['citystate'] = cities['city'].map(str) + ', ' + cities['state']
 
-UNDERGRAD_INST = pd.read_csv("colleges_and_universities_subset.csv")
+undergrad_inst = pd.read_csv("colleges_and_universities_subset.csv")
 
 ## Final dataset columns:
 #
@@ -127,7 +128,7 @@ def sim_students_prgrm_table(n):
     students = students[col_order]
     return students
 
-student_prgm = sim_students_prgrm_table(1000)
+# student_prgm = sim_students_prgrm_table(1000)
 
 
 def sim_student_demographics_table(student_prgm_df, cities_df):
@@ -172,7 +173,7 @@ def sim_student_demographics_table(student_prgm_df, cities_df):
 
     return shuffle_rows(students) 
 
-student_dem = sim_student_demographics_table(student_prgm, CITIES)
+# student_dem = sim_student_demographics_table(student_prgm, cities)
 
 
 def sim_grants_table(student_ids):
@@ -195,7 +196,7 @@ def sim_grants_table(student_ids):
     return df_out
 
 
-grants = sim_grants_table(range(20))
+# grants = sim_grants_table(student_prgm['student_id'])
 
 
 
@@ -205,7 +206,7 @@ def get_json_data(filename):
         course_data = json.load(data_file)
     return course_data
 
-course_data = get_json_data('dept_courses.json')
+# course_data = get_json_data('dept_courses.json')
 
 def gen_courses(prgm, n_courses, course_data):
     if n_courses > len(course_data[prgm]):
@@ -228,6 +229,8 @@ def sim_student_courses(row, course_data):
 
     df['student_id'] = [row.loc['student_id'] for i in range(n_courses)]
     df['course_num'] = gen_courses(row.loc['program'], n_courses, course_data)
+    df['section'] = np.random.choice([1, 2, 3], n_courses, p = [0.8, 0.15, 0.05])
+    df['term'] = np.random.choice([1, 2], n_courses, p = [0.6, 0.4])
     df['final_grade'] = np.random.choice(['A', 'B', 'C'], n_courses, p = [0.56, 0.30, 0.14])
     return df
 
@@ -246,10 +249,10 @@ def sim_courses_table(student_df, course_data):
     n_row = df.shape[0]
     df = shuffle_rows(df)
     df['id'] = np.arange(n_row)
-    col_order = ['id', 'student_id', 'course_num', 'final_grade']
+    col_order = ['id', 'student_id', 'course_num', 'section', 'term', 'final_grade']
     return df[col_order] 
 
-student_courses = sim_courses_table(student_prgm, course_data)
+# student_courses = sim_courses_table(student_prgm, course_data)
 
 
 def gen_gre_quant(degree_prgm):
@@ -284,8 +287,6 @@ def gen_prior_degree(degree_prgm, degree):
 
     return out 
 
-
-
 def gen_gre_verbal(gre_quant):
     eta = 1.7 * gre_quant + np.random.normal(0.0, 0.4)
     gre = inverse_logit(eta)
@@ -316,38 +317,33 @@ def sim_applications_table(student_df, universities):
     df['university'] = np.random.choice(universities, n)
 
     for i in range(n):
-        df.loc[i, 'gre_quant'] = gen_gre_quant(student_df.loc[i, 'program'])
-        df.loc[i, 'gre_verbal'] = gen_gre_verbal(df.loc[i, 'gre_quant'])
-        df.loc[i, 'gre_writing'] = gen_gre_write(df.loc[i, 'gre_verbal'], df.loc[i, 'gre_quant'])
-        df.loc[i, 'gpa'] = gen_gpa(df.loc[i, 'gre_verbal'], \
-                                   df.loc[i, 'gre_quant'],  \
-                                   df.loc[i, 'gre_writing'])
+        df.loc[i, 'gre_quant_pct'] = gen_gre_quant(student_df.loc[i, 'program'])
+        df.loc[i, 'gre_verbal_pct'] = gen_gre_verbal(df.loc[i, 'gre_quant_pct'])
+        df.loc[i, 'gre_writing_pct'] = gen_gre_write(df.loc[i, 'gre_verbal_pct'], df.loc[i, 'gre_quant_pct'])
+        df.loc[i, 'prior_degree'] = gen_prior_degree(student_df.loc[i, 'program'], \
+                                                     student_df.loc[i, 'degree'])
+        df.loc[i, 'gpa'] = gen_gpa(df.loc[i, 'gre_verbal_pct'], \
+                                   df.loc[i, 'gre_quant_pct'],  \
+                                   df.loc[i, 'gre_writing_pct'])
     df = shuffle_rows(df)
     df['id'] = np.arange(n)
-    col_order = ['id', 'student_id', 'research_experience', 'university', 'gre_quant', \
-      'gre_verbal', 'gre_writing', 'gpa']
+    col_order = ['id', 'student_id', 'university', 'prior_degree', 'gre_quant_pct', \
+      'gre_verbal_pct', 'gre_writing_pct', 'gpa', 'research_experience', ]
     return df[col_order]
 
-student_apps = sim_applications_table(student_prgm, UNDERGRAD_INST['institution_name'])
-student_apps.head()
-student_apps.describe()
-student_apps
+# student_apps = sim_applications_table(student_prgm, undergrad_inst['institution_name'])
+# student_apps.head()
+# student_apps.describe()
+# student_apps
 
 
-journal_data = get_json_data("journals_info.json")
+# journal_data = get_json_data("journals_info.json")
 
 def get_journal_data(prgm, journal_dict):
     journals = journal_dict[prgm]
     journal, impact_factor =  np.random.choice(journals).split(", ")
     return (journal, float(impact_factor))
 
-def test_get_journal_data(n, phd_prgms, masters_prgms, journal_dict):
-    prgms = phd_prgms + masters_prgms 
-    for i in range(n):
-        prgm = np.random.choice(prgms)
-        journal, impfactr = get_journal_data(prgm, journal_dict)
-
-test_get_journal_data(1000, PHD_PRGMS, MASTERS_PRGMS, journal_data)
 
 def gen_publications(student_prgm_row, journal_data):
     prgm = student_prgm_row.loc['program']
@@ -370,17 +366,41 @@ def gen_publications(student_prgm_row, journal_data):
         pubs.loc[i, 'volume'] = np.random.choice(range(12))
     return pubs 
 
-gen_publications(student_prgm.loc[0, :], journal_data)
+# gen_publications(student_prgm.loc[0, :], journal_data)
 
 def sim_publications_table(student_prgm, journal_data):
     n = student_prgm.shape[0]
     df = gen_publications(student_prgm.loc[0, :], journal_data)
-    print(df)
     for i in range(n):
         newdat = gen_publications(student_prgm.loc[i, :], journal_data)
         df = df.append(newdat, ignore_index = True, verify_integrity = True)
-    return df
 
-sim_publications_table(student_prgm, journal_data)
+    df = shuffle_rows(df)
+    df['id'] = np.arange(df.shape[0])
+    col_order = ['id', 'student_id', 'journal', 'issue', 'volume', 'impact_factor'] 
+    return df[col_order]
 
+# sim_publications_table(student_prgm, journal_data)
+
+
+if __name__ == '__main__':
+    np.random.seed(11111)
+    n_students = 1000
+
+    course_data = get_json_data('dept_courses.json')
+    journal_data = get_json_data("journals_info.json")
+
+    student_prgm = sim_students_prgrm_table(n_students)
+    student_dem = sim_student_demographics_table(student_prgm, cities)
+    grants = sim_grants_table(student_prgm['student_id'])
+    courses = sim_courses_table(student_prgm, course_data)
+    apps = sim_applications_table(student_prgm, undergrad_inst['institution_name'])
+    pubs = sim_publications_table(student_prgm, journal_data)
+
+    student_prgm.to_csv('../simdata/student_prgm.csv', index = False)
+    student_dem.to_csv('../simdata/student_dem.csv', index = False)
+    grants.to_csv('../simdata/grants.csv', index = False)
+    courses.to_csv('../simdata/courses.csv', index = False)
+    apps.to_csv('../simdata/apps.csv', index = False)
+    pubs.to_csv('../simdata/pubs.csv', index = False)
 
