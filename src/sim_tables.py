@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-import pandas as pd 
+import pandas as pd
 import numpy as np
 import json
+import sys
 
 from xtabs2vars import *
 
 
-# Here we load city data for generating students' hometowns. We assign the 
-# probability of selecting a city in proportion to the size of the city. 
+# Here we load city data for generating students' hometowns. We assign the
+# probability of selecting a city in proportion to the size of the city.
 cities = pd.read_csv('../input_data/top_500_cities.csv')
 cities['probability'] = cities.iloc[:, 2]/sum(cities.iloc[:, 2])
 cities['citystate'] = cities['city'].map(str) + ', ' + cities['state']
@@ -18,11 +19,11 @@ undergrad_inst = pd.read_csv("../input_data/colleges_and_universities_subset.csv
 ## Final dataset columns:
 #
 # [1] left_program, degree_program(phd, ms), dept, undergrad_gpa, year_in_program,
-# [6] classes_taken, cohort_size, age, gender, international_student, 
-# [11] year_entered, num_publications, mean_impact_factor, max_impact_factor, 
-# [15] n_times_ta, funded_pos, distance_to_hometown, advisor_rank, lab_size, 
+# [6] classes_taken, cohort_size, age, gender, international_student,
+# [11] year_entered, num_publications, mean_impact_factor, max_impact_factor,
+# [15] n_times_ta, funded_pos, distance_to_hometown, advisor_rank, lab_size,
 # [20] is_married, has_children, undergrad_research_experience, num_grants
-# [24] num_grants, 
+# [24] num_grants,
 
 
 ## Tables to aggregate
@@ -31,10 +32,10 @@ undergrad_inst = pd.read_csv("../input_data/colleges_and_universities_subset.csv
 
 
 ## PUBLICATIONS_TABLE:
-# student_id, impact_factor, issue, volume  
+# student_id, impact_factor, issue, volume
 
 ## STUDENT_DEMOGRAPHICS_TABLE:
-# student_id, age, sex, ethnicity, hometown, marital_status, has_children 
+# student_id, age, sex, ethnicity, hometown, marital_status, has_children
 
 ## STUDENTS_PRGRM_TABLE:
 # student_id, program, degree, fulltime, funded_position, year_in_program
@@ -51,30 +52,30 @@ undergrad_inst = pd.read_csv("../input_data/colleges_and_universities_subset.csv
 
 
 ## ta_data_table:
-# student_id, course_id, 
+# student_id, course_id,
 
 ## professors_table:
-# prof_id, rank, lab_size, dept, 
+# prof_id, rank, lab_size, dept,
 
 
 inverse_logit = lambda x: 1/(1 + np.exp(-x))
 
 def shuffle_rows(df):
     '''
-    This function is used to shuffle rows to in order to lessen 
+    This function is used to shuffle rows to in order to lessen
     the impression of simulated data in many of the generated tables.
     '''
     n = df.shape[0]
     row_order = np.arange(n)
     np.random.shuffle(row_order)
-    
+
     df = df.iloc[row_order, :].reset_index(drop = True)
     return df
 
 
 def gen_student_ids(n):
     ids = ['SR' + str(x) for x in range(1001000, 1001000 + n)]
-    np.random.shuffle(ids) 
+    np.random.shuffle(ids)
     return ids
 
 def gen_age(yr):
@@ -84,17 +85,17 @@ def gen_age(yr):
 
 
 def sim_students_prgrm_table(n):
-    ''' 
-    This function simulates the student_table. Note we make the naïve assumption 
-    that all degree programs are equally likely. 
     '''
-    f = open('phd_prgms.txt', 'r')
+    This function simulates the student_table. Note we make the naive assumption
+    that all degree programs are equally likely.
+    '''
+    f = open('../input_data/phd_prgms.txt', 'r')
     phd_prgms = f.readline().strip('\n').split(', ')
 
-    f = open('masters_prgms.txt', 'r')
+    f = open('../input_data/masters_prgms.txt', 'r')
     masters_prgms = f.readline().strip('\n').split(', ')
 
-    f = open('ms_prgms.txt')
+    f = open('../input_data/ms_prgms.txt')
     ms_prgms = f.readline().strip('\n').split(', ')
 
     students = pd.DataFrame()
@@ -102,9 +103,9 @@ def sim_students_prgrm_table(n):
     students['degree'] = np.random.choice(['PhD', 'MS'], n, p = [0.7, 0.3])
     students['funded_position'] = True
     students['fulltime'] = True
-    
+
     for i in range(n):
-        # PhD and masters students are hanlded quite differently, with 
+        # PhD and masters students are hanlded quite differently, with
         # more nuances in the masters students data
         if students.loc[i, 'degree'] == 'PhD':
             students.loc[i, 'program'] = np.random.choice(phd_prgms)
@@ -114,17 +115,17 @@ def sim_students_prgrm_table(n):
             if students.loc[i, 'program'] not in ms_prgms:
                 students.loc[i, 'degree'] = 'MA'
             students.loc[i, 'year_in_prgm'] = np.random.choice([1, 2, 3])
-            
-            # For masters students, we probabilistically assign 
+
+            # For masters students, we probabilistically assign
             # funded and fulltime status (both are all TRUE for PhD)
             students.loc[i, 'fulltime'] = np.random.choice([True, False], p = [0.8, 0.2])
             if not students.loc[i, 'fulltime']:
-                students.loc[i, 'funded_position'] = False 
-            else: 
+                students.loc[i, 'funded_position'] = False
+            else:
                 students.loc[i, 'funded_position'] = np.random.choice([True, False], p = [0.3, 0.7])
-    
+
     col_order = ['student_id', 'program', 'degree', 'fulltime', 'funded_position', 'year_in_prgm']
-    
+
     students = students[col_order]
     return students
 
@@ -133,19 +134,19 @@ def sim_students_prgrm_table(n):
 
 def sim_student_demographics_table(student_prgm_df, cities_df):
     '''
-    This function simulates student's demographic data. We use the student's 
+    This function simulates student's demographic data. We use the student's
     program data to help inform a few decisions (e.g., `year_in_prgm` and `age`).
     '''
     students = student_prgm_df.copy()
     n = students.shape[0]
-    
-    f = open('stem_prgms.txt')
+
+    f = open('../input_data/stem_prgms.txt')
     stem_prgms = f.readline().strip('\n').split(', ')
 
 
-    # Here we create `marital_status` and `has_children` variables based on the 
-    # crosstabs we specify in the dataframe below. This allows us to perfectly 
-    # control the relation between these categorical variables. 
+    # Here we create `marital_status` and `has_children` variables based on the
+    # crosstabs we specify in the dataframe below. This allows us to perfectly
+    # control the relation between these categorical variables.
     married_children_xtab = pd.DataFrame()
     married_children_xtab['Married'] = [0.1, 0.18]
     married_children_xtab['Single'] = [0.02, 0.70]
@@ -153,14 +154,14 @@ def sim_student_demographics_table(student_prgm_df, cities_df):
 
     xkids, xmarried = xtabs2vars(married_children_xtab, n)
     students['has_children'] = xkids
-    students['marital_status'] = xmarried 
+    students['marital_status'] = xmarried
 
-    ethn_dat = pd.read_csv('ethnicities.csv')
+    ethn_dat = pd.read_csv('../input_data/ethnicities.csv')
     students['has_children'] = students['has_children'] == 'has children'
     students['sex'] = np.random.choice(['Male', 'Female'], n)
     students['ethnicity'] = np.random.choice(ethn_dat['ethnicity'], n, p = ethn_dat['proportion'])
     students['hometown'] = np.random.choice(cities_df['citystate'], n, p = cities_df['probability'])
-    
+
     for i in range(n):
         students.loc[i, 'age'] = gen_age(students.loc[i, 'year_in_prgm'])
         if students.loc[i, 'program'] not in stem_prgms:
@@ -171,7 +172,7 @@ def sim_student_demographics_table(student_prgm_df, cities_df):
     col_subset = ['student_id', 'age', 'sex', 'ethnicity', 'hometown', 'marital_status', 'has_children']
     students = students[col_subset]
 
-    return shuffle_rows(students) 
+    return shuffle_rows(students)
 
 # student_dem = sim_student_demographics_table(student_prgm, cities)
 
@@ -182,8 +183,8 @@ def sim_grants_table(student_ids):
     agencies = ['NIH', 'NSF', 'NIMH', 'DoD']
     amounts =  [x for x in range(8000, 15000, 500)] + [15000, 20000, \
      25000, 30000, 35000, 40000]
-    
-    # Assign probabilities for grant amounts such 
+
+    # Assign probabilities for grant amounts such
     # that larger grants are much less probable.
     probs = [0.13, 0.12, 0.1, 0.09, 0.08, 0.07, 0.06, 0.055, 0.05,   \
      0.045, 0.04, 0.035, 0.03, 0.025, 0.02, 0.019, 0.015, 0.01, 0.005, 0.001]
@@ -202,7 +203,7 @@ def sim_grants_table(student_ids):
 
 # This gets our course data from the JSON
 def get_json_data(filename):
-    with open(filename) as data_file:    
+    with open(filename) as data_file:
         course_data = json.load(data_file)
     return course_data
 
@@ -210,17 +211,17 @@ def get_json_data(filename):
 
 def gen_courses(prgm, n_courses, course_data):
     if n_courses > len(course_data[prgm]):
-        courses = np.random.choice(course_data[prgm], n_courses, replace = True)       
+        courses = np.random.choice(course_data[prgm], n_courses, replace = True)
     else:
         courses = np.random.choice(course_data[prgm], n_courses, replace = False)
-    return courses 
+    return courses
 
 # gen_courses("Applied Mathematics", 5, course_data)
 
 
 def sim_student_courses(row, course_data):
     '''
-    This function generates a single student's course history using `year_in_prgm` to 
+    This function generates a single student's course history using `year_in_prgm` to
     determine the number of courses taken by the student. Grades are assigned at random.
     '''
     yrs = row.loc['year_in_prgm']
@@ -239,7 +240,7 @@ def sim_student_courses(row, course_data):
 def sim_courses_table(student_df, course_data):
     '''
     This function simulates the course history for all students in `student_df`
-    ''' 
+    '''
     n = student_df.shape[0]
     df = sim_student_courses(student_df.loc[0, :], course_data)
 
@@ -250,17 +251,17 @@ def sim_courses_table(student_df, course_data):
     df = shuffle_rows(df)
     df['id'] = np.arange(n_row)
     col_order = ['id', 'student_id', 'course_num', 'section', 'term', 'final_grade']
-    return df[col_order] 
+    return df[col_order]
 
 # student_courses = sim_courses_table(student_prgm, course_data)
 
 
 def gen_gre_quant(degree_prgm):
-    ''' 
-    This function simulates quant GRE scores, different means SDs 
+    '''
+    This function simulates quant GRE scores, different means SDs
     are used for STEM and non-STEM students.
     '''
-    f = open('stem_prgms.txt')
+    f = open('../input_data/stem_prgms.txt')
     stem_prgms = f.readline().strip('\n').split(', ')
     if degree_prgm in stem_prgms:
         # mean of 2.8 and SD 0.3 give a resulting mean percentile = 94%
@@ -270,22 +271,22 @@ def gen_gre_quant(degree_prgm):
         # mean of 1.7 and SD 0.7 give a resulting mean percentile = 82%
         eta = np.random.normal(1.7, 0.6)
         gre = inverse_logit(eta)
-    return gre 
+    return gre
 
 # gen_gre_quant('Appled Mathematics')
 
 def gen_prior_degree(degree_prgm, degree):
-    f = open('stem_prgms.txt')
+    f = open('../input_data/stem_prgms.txt')
     stem_prgms = f.readline().strip('\n').split(', ')
     if degree == 'PhD':
         if degree_prgm in stem_prgms:
             out = np.random.choice(['MS', 'BS', 'BA'], p = [0.15, 0.6, 0.25])
-        else: 
+        else:
             out = np.random.choice(['MA', 'BS', 'BA'], p = [0.15, 0.1, 0.75])
     elif degree != 'PhD':
         out = np.random.choice(['BA', 'BS'], p = [0.7, 0.3])
 
-    return out 
+    return out
 
 def gen_gre_verbal(gre_quant):
     eta = 1.7 * gre_quant + np.random.normal(0.0, 0.4)
@@ -302,11 +303,11 @@ def gen_gre_write(gre_verbal, gre_quant):
 def gen_gpa(gre_verb, gre_quant, gre_writing):
     err = np.random.normal(0.0, 0.15)
     val = 3.3 * np.log(1.25 * gre_verb + 1.35 * gre_quant + 1.05 * gre_writing + err)
-    if val > 4.0: 
+    if val > 4.0:
         gpa = 4.0
     else:
         gpa = val
-    return gpa 
+    return gpa
 
 
 def sim_applications_table(student_df, universities):
@@ -354,17 +355,17 @@ def gen_publications(student_prgm_row, journal_data):
     pubs['journal'] = np.zeros(n_pubs, str)
     pubs['impact_factor'] = np.zeros(n_pubs)
 
-    # Here we choose a random integer that allows us to restrict a given student's 
+    # Here we choose a random integer that allows us to restrict a given student's
     # publications to all come from within a given range of the journal's issues.
     issue_range = np.random.choice(range(10, 50))
 
     for i in range(n_pubs):
         pubs.loc[i, 'journal'], pubs.loc[i, 'impact_factor'] = get_journal_data(prgm, journal_data)
-        
+
         # add random issue and volume numbers
         pubs.loc[i, 'issue'] = np.random.choice(range(1, issue_range))
         pubs.loc[i, 'volume'] = np.random.choice(range(12))
-    return pubs 
+    return pubs
 
 # gen_publications(student_prgm.loc[0, :], journal_data)
 
@@ -377,15 +378,14 @@ def sim_publications_table(student_prgm, journal_data):
 
     df = shuffle_rows(df)
     df['id'] = np.arange(df.shape[0])
-    col_order = ['id', 'student_id', 'journal', 'issue', 'volume', 'impact_factor'] 
+    col_order = ['id', 'student_id', 'journal', 'issue', 'volume', 'impact_factor']
     return df[col_order]
 
 # sim_publications_table(student_prgm, journal_data)
 
-
-if __name__ == '__main__':
-    np.random.seed(11111)
-    n_students = 1000
+def main(n, seed):
+    np.random.seed(seed)
+    n_students = n
 
     course_data = get_json_data('../input_data/dept_courses.json')
     journal_data = get_json_data('../input_data/journals_info.json')
@@ -404,3 +404,8 @@ if __name__ == '__main__':
     apps.to_csv('../simdata/apps.csv', index = False)
     pubs.to_csv('../simdata/pubs.csv', index = False)
 
+
+if __name__ == '__main__':
+    n = int(sys.argv[1])
+    seed = int(sys.argv[2])
+    main(n, seed)
