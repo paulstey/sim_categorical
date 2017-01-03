@@ -103,6 +103,7 @@ def sim_students_prgrm_table(n):
     students['degree'] = np.random.choice(['PhD', 'MS'], n, p = [0.7, 0.3])
     students['funded_position'] = True
     students['fulltime'] = True
+    students['year_in_prgm'] = np.zeros(n, int)
 
     for i in range(n):
         # PhD and masters students are hanlded quite differently, with
@@ -161,6 +162,7 @@ def sim_student_demographics_table(student_prgm_df, cities_df):
     students['sex'] = np.random.choice(['Male', 'Female'], n)
     students['ethnicity'] = np.random.choice(ethn_dat['ethnicity'], n, p = ethn_dat['proportion'])
     students['hometown'] = np.random.choice(cities_df['citystate'], n, p = cities_df['probability'])
+    students['age'] = np.zeros(n, int)
 
     for i in range(n):
         students.loc[i, 'age'] = gen_age(students.loc[i, 'year_in_prgm'])
@@ -358,6 +360,9 @@ def gen_publications(student_prgm_row, journal_data):
     # Here we choose a random integer that allows us to restrict a given student's
     # publications to all come from within a given range of the journal's issues.
     issue_range = np.random.choice(range(10, 50))
+
+    pubs['issue'] = np.zeros(n_pubs, int)
+    pubs['volume'] = np.zeros(n_pubs, int)
 
     for i in range(n_pubs):
         pubs.loc[i, 'journal'], pubs.loc[i, 'impact_factor'] = get_journal_data(prgm, journal_data)
