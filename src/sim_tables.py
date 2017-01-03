@@ -182,7 +182,12 @@ def sim_student_demographics_table(student_prgm_df, cities_df):
 def sim_grants_table(student_ids):
     n = round(len(student_ids)/4)
 
-    agencies = ['NIH', 'NSF', 'NIMH', 'DoD']
+    agencies = ['National Institutes of Health', 'National Science Foundation', \
+      'National Institute of Mental Health', 'U.S. Defense Advanced Research Project Agency', \
+      'National Endowment for the Humanities', 'American Council of Learned Societies', \
+      'Department of Education', 'U.S. Department of Energy', 'National Endowment for the Arts', \
+      'Research Corporation for Science Advancement', 'The Foundation Center']
+
     amounts =  [x for x in range(8000, 15000, 500)] + [15000, 20000, \
      25000, 30000, 35000, 40000]
 
