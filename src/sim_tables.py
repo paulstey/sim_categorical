@@ -200,7 +200,7 @@ def sim_grants_table(student_ids):
     df_out['grant_id'] = ['F' + str(x) for x in range(50100, 50100 + n)]
     df_out['student_id'] = np.random.choice(student_ids, n, replace = True)
     df_out['amount'] = np.random.choice(amounts, n, p = probs)
-    df_out['agency'] = np.random.choice(agencies, n, p = [0.45, 0.35, 0.1, 0.1])
+    df_out['agency'] = np.random.choice(agencies, n, p = [0.11, 0.15, 0.11, 0.06, 0.07, 0.06, 0.15, 0.09, 0.07, 0.07, 0.06])
     return df_out
 
 
