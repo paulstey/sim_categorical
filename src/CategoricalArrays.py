@@ -33,4 +33,10 @@ class CategoricalArray:
             out = np.dot(self.dummycodes, np.array(betas))
         return out
 
-    __rmul__ = __mul__
+    def __rmul__(self, betas):
+         if len(betas) != self.num_categories-1:
+             raise TypeError("CategoricalArray must be multiplied by vectors of length \
+                              equal to one minus the number of categories.")
+         else:
+             out = np.dot(np.array(betas), self.dummycodes)
+         return out
