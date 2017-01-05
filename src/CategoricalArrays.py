@@ -3,15 +3,15 @@ import numpy as np
 class CategoricalArray:
     '''
     The class CategoricalArray is used for taking one-dimensional array-type
-    (e.g., list, or np.array) objects of string data and converting to a matrix of 
-    dummy codes such that the resulting CategoricalArray can be used in model equations. 
-    
+    (e.g., list, or np.array) objects of string data and converting to a matrix of
+    dummy codes such that the resulting CategoricalArray can be used in model equations.
+
     x = CategoricalArray(["dog", "cat", "cat", "bird", "fish", "dog"])
     x * [4.2, 0.1, 8.0]
     '''
     def __init__(self, v):
         self.data = v
-        self.categories = np.unique(v)             # returns sorted values
+        self.categories = np.unique(v)             # NOTE: returns sorted values
         self.num_categories = len(self.categories)
         self.n = len(v)
 
@@ -34,7 +34,3 @@ class CategoricalArray:
         return out
 
     __rmul__ = __mul__
-
-
-
-
