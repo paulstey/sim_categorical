@@ -27,7 +27,7 @@ X = np.column_stack((np.ones(n), X))
 eta = np.dot(X, betas)
 
 # Compute π_i for each x_i
-pi = inv_logit(eta)
+pi = inverse_logit(eta)
 
 # Generate outcome variable
 y = np.random.binomial(1, pi)
